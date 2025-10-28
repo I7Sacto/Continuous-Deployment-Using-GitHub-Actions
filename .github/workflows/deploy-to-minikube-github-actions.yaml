@@ -1,28 +1,45 @@
-name: Deploy to Minikube using GitHub Actions
+name: Build and Deploy Node.js to Minikube
 
-on: [push]
-  
+on:
+  push:
+    branches:
+      - master
+
 jobs:
   job1:
     runs-on: ubuntu-latest
-    name: build Node.js Docker Image and deploy to minikube
+    name: Build Node.js Docker Image and deploy to Minikube
     steps:
-    - uses: actions/checkout@v2
-    - name: Start minikube
+    - name: Checkout repository
+      uses: actions/checkout@v2
+
+    - name: Start Minikube
       uses: medyagh/setup-minikube@master
-    - name: Try the cluster !
+
+    - name: Verify cluster is running
       run: kubectl get pods -A
-    - name: Build image
+
+    - name: Build Docker image inside Minikube
       run: |
-          export SHELL=/bin/bash
-          eval $(minikube -p minikube docker-env)
-          docker build -f ./Dockerfile -t devopshint/node-app:latest .
-          echo -n "verifying images:"
-          docker images         
-    - name: Deploy to minikube
-      run:
-        kubectl apply -f k8s-node-app.yaml
+        export SHELL=/bin/bash
+        eval $(minikube -p minikube docker-env)
+        docker build -f ./Dockerfile -t devopshint/node-app:latest .
+        echo "✅ Docker image built:"
+        docker images
+
+    - name: List files to confirm YAML presence
+      run: ls -la
+
+    - name: Deploy to Minikube
+      run: |
+        if [ -f k8s-node-app.yaml ]; then
+          kubectl apply -f k8s-node-app.yaml
+        else
+          echo "❌ YAML file not found!"
+          exit 1
+        fi
+
     - name: Test service URLs
       run: |
-          minikube service list
-          minikube service nodejs-app --url
+        minikube service list
+        minikube service nodejs-app --url
