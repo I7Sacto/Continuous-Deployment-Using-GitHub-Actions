@@ -26,7 +26,7 @@ jobs:
       run: kubectl get pods -A
     - name: Waiting
       run: sleep 120
-    - name: List poda
+    - name: List pods
       run: kubectl get pods -A
     - name: Test service URLs
       run: |
